@@ -92,11 +92,147 @@ Certifique-se de ter o Python instalado na sua máquina.
 
 ---
 
-## 📋 Status do Protótipo
+## 🕹️ Controles
 
-- [ ] Criação da estrutura de pastas e classes base
-- [ ] Movimentação e colisão básica do Jogador
-- [ ] Sistema de componentes e inventário
-- [ ] Inimigos básicos (Robô e Drone)
-- [ ] Interface (HUD de vida e inventário)
-- [ ] Montagem do computador e condição de vitória/derrota
+| Tecla | Ação |
+| :--- | :--- |
+| **`↑` (Seta Cima)** | Move o personagem para cima |
+| **`↓` (Seta Baixo)** | Move o personagem para baixo |
+| **`←` (Seta Esquerda)** | Move o personagem para a esquerda |
+| **`→` (Seta Direita)** | Move o personagem para a direita |
+| **`R`** | Reinicia a partida / recarrega a fase |
+
+---
+
+## 🎯 Regras e Dinâmica
+
+- **Objetivo principal:** Encontrar e coletar os 5 componentes de hardware:
+  1. *Placa-mãe*
+  2. *Processador*
+  3. *Memória RAM*
+  4. *Armazenamento*
+  5. *Fonte*
+- **Condição de Vitória:** Com os 5 componentes no inventário, aproxime-se e interaja com o terminal do computador central.
+- **Condição de Derrota:** Os robôs patrulham o mapa e perseguem o jogador em intervalos regulares. Cada ataque reduz a vida do jogador em 10 pontos. Se a vida atingir 0, ocorre *Game Over*.
+- **HUD Superior:** Exibe a barra de vida em tempo real (200px máx.) e 5 slots indicativos dos componentes coletados (cinza = pendente, verde = coletado).
+
+---
+
+## 📐 Modelagem Orientada a Objetos (UML)
+
+O projeto adota os pilares de **Abstração**, **Herança**, **Encapsulamento** e **Polimorfismo**, além de relações de **Composição** e **Agregação**.
+
+```mermaid
+classDiagram
+    direction TB
+
+    class Entidade {
+        <<abstract>>
+        +float x
+        +float y
+        +int tamanho
+        +int largura
+        +int altura
+        +tuple cor
+        +int vida
+        +mover(dx, dy, obstaculos) bool
+        +take_damage(valor) void
+        +draw(tela) void
+        +update(dt, fase)* void
+    }
+
+    class Jogador {
+        +list inventario
+        +update(dt, fase) void
+        +collect(componente) void
+    }
+
+    class InimigoRobo {
+        +int dano
+        +float recarga
+        +float tempo
+        +update(dt, fase) void
+        +attack(jogador) void
+    }
+
+    class Obstaculo {
+        +float x
+        +float y
+        +int largura
+        +int altura
+        +draw(tela) void
+    }
+
+    class Componente {
+        +str nome
+        +float x
+        +float y
+        +int largura
+        +int altura
+        +bool coletado
+        +draw(tela) void
+    }
+
+    class Computador {
+        +list NECESSARIOS$
+        +float x
+        +float y
+        +int largura
+        +int altura
+        +faltantes(inventario) list
+        +draw(tela) void
+    }
+
+    class Fase {
+        +Jogador jogador
+        +list obstaculos
+        +list componentes
+        +list robos
+        +Computador computador
+        +bool venceu
+        +str mensagem
+        +load() void
+        +update(dt) void
+        +draw(tela) void
+    }
+
+    class Jogo {
+        +Surface tela
+        +Clock relogio
+        +bool rodando
+        +str estado
+        +Fase fase
+        +change_level() void
+        +run() void
+        +processar_evento() void
+        +atualizar(dt) void
+        +desenhar() void
+    }
+
+    Entidade <|-- Jogador : Herança
+    Entidade <|-- InimigoRobo : Herança
+    Fase o-- Obstaculo : Agregação
+    Fase o-- Componente : Agregação
+    Fase o-- InimigoRobo : Agregação
+    Fase o-- Computador : Agregação
+    Fase *-- Jogador : Composição
+    Jogo *-- Fase : Composição
+```
+
+### Justificativa dos Conceitos de POO Aplicados
+1. **Classe Abstrata e Polimorfismo (`Entidade`):** Define a base de posicionamento, dimensões, renderização e controle de dano. O método abstrato `update(dt, fase)` força subclasses como `Jogador` e `InimigoRobo` a implementarem suas lógicas comportamentais específicas.
+2. **Reaproveitamento de Código via Herança:** O método `mover(dx, dy, obstaculos)` da classe `Entidade` trata as colisões de borda e com obstáculos estáticos tanto para o jogador quanto para os robôs.
+3. **Agregação e Composição:** A classe `Fase` atua como agregadora dos elementos do cenário (`Obstaculo`, `Componente`, `Computador`, `InimigoRobo`) e compõe o estado ativo do `Jogador`. A classe `Jogo` encapsula o ciclo de vida do Pygame e os estados de transição da aplicação.
+
+---
+
+## 📌 Estado Atual do Protótipo
+
+- [x] Movimentação em grid com detecção de colisões em paredes e obstáculos.
+- [x] Lógica de perseguição dos inimigos com cooldown de ataque.
+- [x] Sistema de coleta e inventário de componentes.
+- [x] Validação de peças no computador central.
+- [x] Telas de vitória e derrota com opção de reinício imediato (`R`).
+- [x] HUD superior com status de vida e slots de peças coletadas.
+- [ ] *(Versão Final)* Refinamento da máquina de estados e algoritmos de busca de caminho (A* / Breadth-First Search).
+- [ ] *(Versão Final)* Adição de efeitos sonoros e tilesets gráficos.
