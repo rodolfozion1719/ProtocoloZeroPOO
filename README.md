@@ -92,35 +92,34 @@ Certifique-se de ter o Python instalado na sua máquina.
 
 ---
 
-## 🕹️ Controles
 
-| Tecla | Ação |
+## 🕹️ Controles e Interface
+
+| Entrada | Ação |
 | :--- | :--- |
-| **`↑` (Seta Cima)** | Move o personagem para cima |
-| **`↓` (Seta Baixo)** | Move o personagem para baixo |
-| **`←` (Seta Esquerda)** | Move o personagem para a esquerda |
-| **`→` (Seta Direita)** | Move o personagem para a direita |
-| **`R`** | Reinicia a partida / recarrega a fase |
+| **`↑` (Seta para Cima)** | Move 1 célula (40px) para cima |
+| **`↓` (Seta para Baixo)** | Move 1 célula (40px) para baixo |
+| **`←` (Seta para a Esquerda)** | Move 1 célula (40px) para a esquerda |
+| **`→` (Seta para a Direita)** | Move 1 célula (40px) para a direita |
+| **`R`** | Reinicia a partida / reposiciona entidades |
+
+> **Nota:** As mensagens de status do jogo e orientações ao jogador são exibidas dinamicamente na barra de título da janela (`pygame.display.set_caption`).
 
 ---
 
-## 🎯 Regras e Dinâmica
+## 🎯 Regras e Dinâmica do Protótipo
 
-- **Objetivo principal:** Encontrar e coletar os 5 componentes de hardware:
-  1. *Placa-mãe*
-  2. *Processador*
-  3. *Memória RAM*
-  4. *Armazenamento*
-  5. *Fonte*
-- **Condição de Vitória:** Com os 5 componentes no inventário, aproxime-se e interaja com o terminal do computador central.
-- **Condição de Derrota:** Os robôs patrulham o mapa e perseguem o jogador em intervalos regulares. Cada ataque reduz a vida do jogador em 10 pontos. Se a vida atingir 0, ocorre *Game Over*.
-- **HUD Superior:** Exibe a barra de vida em tempo real (200px máx.) e 5 slots indicativos dos componentes coletados (cinza = pendente, verde = coletado).
+- **Movimentação Discreta (Grid):** Toda a movimentação ocorre em passos fixos de **40x40 pixels** dentro de uma janela de 800x600 pixels.
+- **Limites da Tela:** A classe base `Entidade` valida os limites da janela antes de confirmar o movimento, impedindo que o jogador ou robô saiam da área visível.
+- **Inteligência do Robô:** O `InimigoRobo` acumula tempo delta (`dt`) e dá um passo a cada `0.5s`, priorizando a aproximação no eixo horizontal ($X$) e, em seguida, no eixo vertical ($Y$).
+- **Detecção de Colisão:** Por ser baseado em coordenadas de grade, o contato ocorre quando `jogador.x == robo.x` e `jogador.y == robo.y`.
+- **Condição de Derrota:** Ao colidir, a variável de estado `self.pego` é ativada, bloqueando novos comandos de movimento até que a tecla `R` seja pressionada.
 
 ---
 
 ## 📐 Modelagem Orientada a Objetos (UML)
 
-O projeto adota os pilares de **Abstração**, **Herança**, **Encapsulamento** e **Polimorfismo**, além de relações de **Composição** e **Agregação**.
+O diagrama abaixo representa com fidelidade as classes, atributos, métodos e relações presentes no arquivo `PrototipoSimples.py`:
 
 ```mermaid
 classDiagram
@@ -128,81 +127,38 @@ classDiagram
 
     class Entidade {
         <<abstract>>
-        +float x
-        +float y
-        +int tamanho
-        +int largura
-        +int altura
+        +int x
+        +int y
         +tuple cor
-        +int vida
-        +mover(dx, dy, obstaculos) bool
-        +take_damage(valor) void
-        +draw(tela) void
-        +update(dt, fase)* void
+        +mover(dx, dy) void
+        +atualizar(dt, jogador)* void
+        +desenhar(tela)* void
     }
 
     class Jogador {
-        +list inventario
-        +update(dt, fase) void
-        +collect(componente) void
+        +atualizar(dt, jogador) void
+        +desenhar(tela) void
+    }
+
+    class Inimigo {
+        <<abstract>>
+        +float intervalo
+        +float tempo
     }
 
     class InimigoRobo {
-        +int dano
-        +float recarga
-        +float tempo
-        +update(dt, fase) void
-        +attack(jogador) void
-    }
-
-    class Obstaculo {
-        +float x
-        +float y
-        +int largura
-        +int altura
-        +draw(tela) void
-    }
-
-    class Componente {
-        +str nome
-        +float x
-        +float y
-        +int largura
-        +int altura
-        +bool coletado
-        +draw(tela) void
-    }
-
-    class Computador {
-        +list NECESSARIOS$
-        +float x
-        +float y
-        +int largura
-        +int altura
-        +faltantes(inventario) list
-        +draw(tela) void
-    }
-
-    class Fase {
-        +Jogador jogador
-        +list obstaculos
-        +list componentes
-        +list robos
-        +Computador computador
-        +bool venceu
-        +str mensagem
-        +load() void
-        +update(dt) void
-        +draw(tela) void
+        +atualizar(dt, jogador) void
+        +desenhar(tela) void
     }
 
     class Jogo {
         +Surface tela
         +Clock relogio
         +bool rodando
-        +str estado
-        +Fase fase
-        +change_level() void
+        +Jogador jogador
+        +InimigoRobo robo
+        +bool pego
+        +reiniciar() void
         +run() void
         +processar_evento() void
         +atualizar(dt) void
@@ -210,29 +166,36 @@ classDiagram
     }
 
     Entidade <|-- Jogador : Herança
-    Entidade <|-- InimigoRobo : Herança
-    Fase o-- Obstaculo : Agregação
-    Fase o-- Componente : Agregação
-    Fase o-- InimigoRobo : Agregação
-    Fase o-- Computador : Agregação
-    Fase *-- Jogador : Composição
-    Jogo *-- Fase : Composição
+    Entidade <|-- Inimigo : Herança
+    Inimigo <|-- InimigoRobo : Herança
+    Jogo *-- Jogador : Composição
+    Jogo *-- InimigoRobo : Composição
 ```
 
 ### Justificativa dos Conceitos de POO Aplicados
-1. **Classe Abstrata e Polimorfismo (`Entidade`):** Define a base de posicionamento, dimensões, renderização e controle de dano. O método abstrato `update(dt, fase)` força subclasses como `Jogador` e `InimigoRobo` a implementarem suas lógicas comportamentais específicas.
-2. **Reaproveitamento de Código via Herança:** O método `mover(dx, dy, obstaculos)` da classe `Entidade` trata as colisões de borda e com obstáculos estáticos tanto para o jogador quanto para os robôs.
-3. **Agregação e Composição:** A classe `Fase` atua como agregadora dos elementos do cenário (`Obstaculo`, `Componente`, `Computador`, `InimigoRobo`) e compõe o estado ativo do `Jogador`. A classe `Jogo` encapsula o ciclo de vida do Pygame e os estados de transição da aplicação.
+
+1. **Abstração (`Entidade` e `Inimigo`):**
+   - A classe `Entidade` define o contrato comum para qualquer elemento gráfico posicionado (`x`, `y`, `cor`), implementando o método concreto `mover(dx, dy)` com barreira de tela e declarando os métodos abstratos `atualizar` e `desenhar`.
+   - A classe intermediária `Inimigo` especializa a entidade adicionando controle temporal de passo (`intervalo` e `tempo`), mantendo a herança expansível para novos tipos de inimigos.
+
+2. **Herança e Polimorfismo:**
+   - `Jogador` e `InimigoRobo` herdam de `Entidade`, mas possuem comportamentos polimórficos de desenho: o jogador é renderizado como um **retângulo** (`pygame.draw.rect`) e o robô como um **círculo** (`pygame.draw.circle`).
+   - O método `atualizar` do `Jogador` é passivo (acionado via teclado no loop de eventos), enquanto o do `InimigoRobo` implementa a rotina de perseguição automática.
+
+3. **Composição e Encapsulamento (`Jogo`):**
+   - A classe `Jogo` centraliza e encapsula o ciclo de vida da aplicação (inicialização do Pygame, tratamento de eventos `QUIT`/`KEYDOWN`, atualização por `tick` e renderização no buffer da tela).
+   - Ela possui relação de **composição** direta com as entidades ativas (`self.jogador` e `self.robo`), recriando-as no método `reiniciar()`.
 
 ---
 
-## 📌 Estado Atual do Protótipo
+## 📌 Estado Atual vs. Próximos Passos
 
-- [x] Movimentação em grid com detecção de colisões em paredes e obstáculos.
-- [x] Lógica de perseguição dos inimigos com cooldown de ataque.
-- [x] Sistema de coleta e inventário de componentes.
-- [x] Validação de peças no computador central.
-- [x] Telas de vitória e derrota com opção de reinício imediato (`R`).
-- [x] HUD superior com status de vida e slots de peças coletadas.
-- [ ] *(Versão Final)* Refinamento da máquina de estados e algoritmos de busca de caminho (A* / Breadth-First Search).
-- [ ] *(Versão Final)* Adição de efeitos sonoros e tilesets gráficos.
+- [x] Janela gráfica e game loop a 60 FPS com cálculo de `dt`.
+- [x] Movimentação em grade 40x40px com contenção nas bordas da tela.
+- [x] Robô com temporizador de passos e lógica básica de perseguição.
+- [x] Colisão em grade e bloqueio pós-captura.
+- [x] Reinício completo da cena com a tecla `R`.
+- [ ] *(Próxima versão)* Inclusão de obstáculos estáticos (`Obstaculo`) bloqueando caminhos.
+- [ ] *(Próxima versão)* Adição dos componentes coletáveis de hardware (`Componente`).
+- [ ] *(Próxima versão)* Terminal do computador (`Computador`) para validação das peças e vitória.
+- [ ] *(Próxima versão)* Barra de vida com dano fracionado e cooldown de ataque.
