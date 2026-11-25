@@ -30,7 +30,7 @@ Protótipo de jogo 2D desenvolvido em Python com a biblioteca Pygame para a disc
 | Rodolfo Zion Ruthes Brito | [@rodolfozion1719](https://github.com/rodolfozion1719) |
 | Pedro Ricardo Moreira | [@pedro-rfm](https://github.com/pedro-rfm) |
 | Lucas Viana Gusmão| [@lucasvianagusmao](https://github.com/lucasvianagusmao-dev) |
-| Eduardo Moraes de Oliveira | [@aindasemarroba](https://github.com/Eduardo-moraisOl) |
+| Eduardo Moraes de Oliveira | [@Eduardo-moraisOl](https://github.com/Eduardo-moraisOl) |
 
 ---
 
